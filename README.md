@@ -4,7 +4,7 @@ Python module to read SigMF datasets and categorize them into dataframes.
 
 
 
-![SigMF-reader block digram](/Users/saptarshi/Desktop/sigmf-reader/SigMF-reader.png)
+![SigMF-reader block digram](https://github.com/sappyh/SigMF-reader/blob/master/SigMF-reader.png)
 
 
 
