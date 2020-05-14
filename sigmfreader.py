@@ -27,11 +27,13 @@ class sigmfreader(object):
     NODEID_KEY= "rfbuddy:nodeid"
     
     
-    def __init__(self, path, ncols):
+    def __init__(self, path, ncols, symbol_length, alignment = True):
         self.path=Path(path)
         self.ncols=ncols
         self.columns=np.array([i for i in range(self.ncols)])
         self.df=pd.DataFrame(columns=self.columns)
+        self.symbol_length=symbol_length
+        self.alignment=alignment
     
     def fromdirectory(self):
         dataset=dict()
@@ -55,13 +57,18 @@ class sigmfreader(object):
  
     def annotator_segmenter(self):
         nodeid= self.global_info.get(self.NODEID_KEY)
-        annotated_df= pd.DataFrame(columns=self.columns)
+        annotated_df= pd.DataFrame(columns=self.columns, dtype=np.complex64)
         for i in range(len(self.annotation_info)):
             sample_start= self.annotation_info[i].get(self.START_INDEX_KEY)
             sample_count= self.annotation_info[i].get(self.LENGTH_INDEX_KEY)
             
-            
-            
+            #Padding extra to get transient data and have have sort of symbol alignment in terms of length
+            if(self.alignment):
+
+                sample_start = 0 if sample_start<10*self.symbol_length else sample_start-10*self.symbol_length
+                
+                sample_count= sample_count if sample_count%self.symbol_length != 0 else sample_count+self.symbol_length-sample_count%self.symbol_length
+                sample_count = sample_count+ 10*self.symbol_length   
             annotated_array=self.datafile[sample_start:(sample_start+ sample_count)]
             
             

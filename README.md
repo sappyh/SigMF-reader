@@ -30,8 +30,10 @@ Pandas Exporter: Combines the the segments for each annotated capture from diffe
 from sigmfreader import sigmfreader
 # Define the number of samples in one timeseries training samples
 ncols=128
+# Define the number of symbols needed
+symbol_length=32
 # Call the reader
-reader=sigmfreader("SigMF_dir", ncols)
+reader=sigmfreader("SigMF_dir", ncols, symbol_length)
 # Do the pd exporter
 df = reader.pandas_exporter()
 # print the dataframe
