@@ -1,9 +1,9 @@
-## Python module for reading sigmf data files
 import json
 import codecs
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from window_slider import Slider
 
 SIGMF_METADATA_EXT = ".sigmf-meta"
 SIGMF_DATASET_EXT = ".sigmf-data"
@@ -55,9 +55,10 @@ class sigmfreader(object):
     def loaddatafile(self, file):       
         self.datafile= np.fromfile(file, dtype=np.complex64)
  
-    def annotator_segmenter(self):
+    def annotator_segmenter(self, sliding_window):
         nodeid= self.global_info.get(self.NODEID_KEY)
         annotated_df= pd.DataFrame(columns=self.columns, dtype=np.complex64)
+#         count = 0
         for i in range(len(self.annotation_info)):
             sample_start= self.annotation_info[i].get(self.START_INDEX_KEY)
             sample_count= self.annotation_info[i].get(self.LENGTH_INDEX_KEY)
@@ -73,27 +74,39 @@ class sigmfreader(object):
             
             
             ## Have to pad zeros to make all the rows same in length
-            
-            N = self.ncols - len(annotated_array)%self.ncols
-            annotated_array=np.pad(annotated_array, (0, N), 'constant')
-            annotated_array= np.reshape(annotated_array,(-1, self.ncols))
-            annotated_df=annotated_df.append(pd.DataFrame(data=annotated_array, dtype=np.complex64),ignore_index=True)
+#             count+=1
+#             print(count)
+            if (sliding_window):
+                annotated_shape= annotated_array.shape
+                size=self.ncols
+                shape=(annotated_array.shape[0] - size + 1, size)
+                if(shape[0] < 0):
+                    continue
+                strides = 2*annotated_array.strides
+                patches = np.lib.stride_tricks.as_strided(annotated_array, shape, strides=strides)
+                annotated_df= annotated_df.append(pd.DataFrame(data=patches, dtype=np.complex64),ignore_index=True)  
+            else:
+                N = self.ncols - len(annotated_array)%self.ncols
+                annotated_array=np.pad(annotated_array, (0, N), 'constant')
+                annotated_array= np.reshape(annotated_array,(-1, self.ncols))
+                annotated_df=annotated_df.append(pd.DataFrame(data=annotated_array, dtype=np.complex64),ignore_index=True)
         
         annotated_df["nodeid"]=nodeid
         return annotated_df
     
-    def pandas_exporter(self):
+    def pandas_exporter(self, sliding_window = False):
         dataset=self.fromdirectory()
         bytestream_reader = codecs.getreader("utf-8")  # bytes -> str
-        #Try to load one datafile and one metafile
-        keys= list(dataset.keys())
+#         #Try to load one datafile and one metafile
+        print(dataset.keys())
+        keys= dataset.keys()
         
         for key in keys:
             print(key)
             self.loadmetafile(bytestream_reader(open(dataset[key][self.METADATA],'rb')))
             self.loaddatafile(dataset[key][self.DATAFILE])
         
-            annotated_df= self.annotator_segmenter()
+            annotated_df= self.annotator_segmenter(sliding_window)
             self.df= self.df.append(annotated_df)
         
 #         self.df=self.df.astype(np.complex64)
