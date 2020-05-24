@@ -3,7 +3,6 @@ import codecs
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from window_slider import Slider
 
 SIGMF_METADATA_EXT = ".sigmf-meta"
 SIGMF_DATASET_EXT = ".sigmf-data"
