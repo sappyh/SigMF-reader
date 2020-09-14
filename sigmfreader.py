@@ -1,8 +1,11 @@
+## Python module for reading sigmf data files
 import json
 import codecs
 import pandas as pd
 import numpy as np
+import itertools
 from pathlib import Path
+from window_slider import Slider
 
 SIGMF_METADATA_EXT = ".sigmf-meta"
 SIGMF_DATASET_EXT = ".sigmf-data"
@@ -54,11 +57,17 @@ class sigmfreader(object):
     def loaddatafile(self, file):       
         self.datafile= np.fromfile(file, dtype=np.complex64)
  
-    def annotator_segmenter(self, sliding_window):
+    def annotator_segmenter(self, n_messages, sliding_window):
         nodeid= self.global_info.get(self.NODEID_KEY)
         annotated_df= pd.DataFrame(columns=self.columns, dtype=np.complex64)
 #         count = 0
-        for i in range(len(self.annotation_info)):
+        if(n_messages > len(self.annotation_info)):
+            print ("Number of messsages exceeds that in metadata")
+            sys.exit(1)
+        if(n_messages == -1):
+            n_messages = len(self.annotation_info) 
+
+        for i in range(n_messages):
             sample_start= self.annotation_info[i].get(self.START_INDEX_KEY)
             sample_count= self.annotation_info[i].get(self.LENGTH_INDEX_KEY)
             
@@ -76,7 +85,6 @@ class sigmfreader(object):
 #             count+=1
 #             print(count)
             if (sliding_window):
-                annotated_shape= annotated_array.shape
                 size=self.ncols
                 shape=(annotated_array.shape[0] - size + 1, size)
                 if(shape[0] < 0):
@@ -93,19 +101,28 @@ class sigmfreader(object):
         annotated_df["nodeid"]=nodeid
         return annotated_df
     
-    def pandas_exporter(self, sliding_window = False):
+    def pandas_exporter(self, n_keys = -1, n_messages= -1, sliding_window = False):
         dataset=self.fromdirectory()
         bytestream_reader = codecs.getreader("utf-8")  # bytes -> str
-#         #Try to load one datafile and one metafile
+        
+        # Hanle number of nodes to select from the directory
+        if(n_keys > len(dataset)):
+            print ("Number of keys exceeds that in dictionary")
+            sys.exit(1)
+        if(n_keys == -1):
+            n_keys = len(dataset) 
+
+        dataset=dict(itertools.islice(dataset.items(),n_keys))
         print(dataset.keys())
         keys= dataset.keys()
-        
+
+#         #Try to load one datafile and one metafile
         for key in keys:
             print(key)
             self.loadmetafile(bytestream_reader(open(dataset[key][self.METADATA],'rb')))
             self.loaddatafile(dataset[key][self.DATAFILE])
         
-            annotated_df= self.annotator_segmenter(sliding_window)
+            annotated_df= self.annotator_segmenter(n_messages, sliding_window)
             self.df= self.df.append(annotated_df)
         
 #         self.df=self.df.astype(np.complex64)
