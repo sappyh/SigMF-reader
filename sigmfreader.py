@@ -101,7 +101,7 @@ class sigmfreader(object):
         annotated_df["nodeid"]=nodeid
         return annotated_df
     
-    def pandas_exporter(self, n_keys = -1, n_messages= -1, sliding_window = False):
+    def pandas_exporter(self, input_keys= [], n_keys = -1, n_messages= -1, sliding_window = False):
         dataset=self.fromdirectory()
         bytestream_reader = codecs.getreader("utf-8")  # bytes -> str
         
@@ -111,10 +111,13 @@ class sigmfreader(object):
             sys.exit(1)
         if(n_keys == -1):
             n_keys = len(dataset) 
-
-        dataset=dict(itertools.islice(dataset.items(),n_keys))
-        print(dataset.keys())
-        keys= dataset.keys()
+        
+        if len(keys):
+            keys= input_keys
+        else:
+            dataset=dict(itertools.islice(dataset.items(),n_keys))
+            print(dataset.keys())
+            keys= dataset.keys()
 
 #         #Try to load one datafile and one metafile
         for key in keys:
