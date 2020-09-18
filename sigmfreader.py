@@ -112,7 +112,7 @@ class sigmfreader(object):
         if(n_keys == -1):
             n_keys = len(dataset) 
         
-        if len(keys):
+        if len(input_keys):
             keys= input_keys
         else:
             dataset=dict(itertools.islice(dataset.items(),n_keys))
