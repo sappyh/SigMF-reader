@@ -6,6 +6,7 @@ import numpy as np
 import itertools
 from pathlib import Path
 from window_slider import Slider
+from sklearn import preprocessing
 
 SIGMF_METADATA_EXT = ".sigmf-meta"
 SIGMF_DATASET_EXT = ".sigmf-data"
@@ -79,7 +80,16 @@ class sigmfreader(object):
                 sample_count= sample_count if sample_count%self.symbol_length != 0 else sample_count+self.symbol_length-sample_count%self.symbol_length
                 sample_count = sample_count+ 10*self.symbol_length   
             annotated_array=self.datafile[sample_start:(sample_start+ sample_count)]
-            
+
+            scaler = preprocessing.MinMaxScaler()
+            dataset_real=annotated_array.real.reshape(-1,1)
+            dataset_imag=annotated_array.imag.reshape(-1,1)
+
+            scaler.fit(dataset_real)
+            dataset_imag = scaler.transform(dataset_imag)
+            dataset_real = scaler.transform(dataset_real)
+            annotated_array = (dataset_real + (dataset_imag * 1j)).flatten()
+
             
             ## Have to pad zeros to make all the rows same in length
 #             count+=1
