@@ -92,8 +92,8 @@ class sigmfreader(object):
                     continue
                 strides = 2*annotated_array.strides
                 patches = np.lib.stride_tricks.as_strided(annotated_array, shape, strides=strides)
-                if patches.shape[0] > 10371:
-                    patches=patches[:10371, :]
+                # if patches.shape[0] > 10371:
+                #     patches=patches[:10371, :]
                 annotated_df= annotated_df.append(pd.DataFrame(data=patches, dtype=np.complex64),ignore_index=True)  
             else:
                 N = self.ncols - len(annotated_array)%self.ncols
