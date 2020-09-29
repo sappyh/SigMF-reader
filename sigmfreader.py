@@ -80,7 +80,14 @@ class sigmfreader(object):
                 sample_count= sample_count if sample_count%self.symbol_length != 0 else sample_count+self.symbol_length-sample_count%self.symbol_length
                 sample_count = sample_count+ 10*self.symbol_length   
             annotated_array=self.datafile[sample_start:(sample_start+ sample_count)]
+            scaler = preprocessing.MinMaxScaler()
+            dataset_real=annotated_array.real.reshape(-1,1)
+            dataset_imag=annotated_array.imag.reshape(-1,1)
 
+            scaler.fit(dataset_real)
+            dataset_imag = scaler.transform(dataset_imag)
+            dataset_real = scaler.transform(dataset_real)
+            annotated_array = (dataset_real + (dataset_imag * 1j)).flatten()
             
             ## Have to pad zeros to make all the rows same in length
 #             count+=1
@@ -92,8 +99,6 @@ class sigmfreader(object):
                     continue
                 strides = 2*annotated_array.strides
                 patches = np.lib.stride_tricks.as_strided(annotated_array, shape, strides=strides)
-                # if patches.shape[0] > 10371:
-                #     patches=patches[:10371, :]
                 annotated_df= annotated_df.append(pd.DataFrame(data=patches, dtype=np.complex64),ignore_index=True)  
             else:
                 N = self.ncols - len(annotated_array)%self.ncols
